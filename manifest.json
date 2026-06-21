@@ -1,0 +1,55 @@
+{
+  "name": "PINARAK — BUMDES Bicak Makmur",
+  "short_name": "PINARAK",
+  "description": "Sistem Akuntansi Produksi Olahan Nanas BUMDES Bicak Makmur, Desa Bicak, Trowulan, Mojokerto. Pilihan Nanas Rakyat Bicak.",
+  "id": "pinarak-bumdes-bicak",
+  "start_url": "./PINARAK.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF8DC",
+  "theme_color": "#1F4D26",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buat Batch Produksi",
+      "short_name": "Produksi",
+      "description": "Catat batch produksi baru dengan perhitungan HPP",
+      "url": "./PINARAK.html#produksi"
+    },
+    {
+      "name": "Catat Penjualan",
+      "short_name": "Jual",
+      "description": "Rekam transaksi penjualan PINARAK",
+      "url": "./PINARAK.html#jual"
+    },
+    {
+      "name": "Lihat Laporan",
+      "short_name": "Laporan",
+      "description": "Laporan laba rugi dan kinerja produksi",
+      "url": "./PINARAK.html#laporan"
+    }
+  ]
+}
