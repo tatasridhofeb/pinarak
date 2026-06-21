@@ -623,6 +623,7 @@ function doLogin(){
         <h1>PINARAK</h1>
         <div class="tagline">Pilihan Nanas Rakyat Bicak</div>
         <div class="sari-ribbon">SARI NANAS ALAMI</div>
+        <div id="syncBadge" style="font-size:11px;margin-top:4px;display:flex;align-items:center;gap:4px;color:#aaa;">☁️ <span>Data Lokal</span></div>
       </div>
     </div>
     <div class="header-meta">
@@ -703,6 +704,8 @@ function doLogin(){
 
 // ---------- DATA STORE ----------
 const STORE_KEY = 'pinarak_bumdes_bicak_v1';
+const SYNC_KEY  = 'pinarak_script_url_v1';
+let SCRIPT_URL  = localStorage.getItem(SYNC_KEY) || '';
 
 const defaultData = {
   bahanBaku: [
@@ -765,12 +768,63 @@ function loadData() {
 }
 function saveData() {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  cloudSave();
 }
 function resetData() {
   if (!confirm('Yakin reset semua data ke contoh awal? Data Anda akan hilang.')) return;
   data = JSON.parse(JSON.stringify(defaultData));
   saveData(); render();
   toast('Data berhasil direset.', 'success');
+}
+
+// ---------- CLOUD SYNC (Google Apps Script) ----------
+function setScriptUrl(url) {
+  SCRIPT_URL = url.trim();
+  localStorage.setItem(SYNC_KEY, SCRIPT_URL);
+  if (SCRIPT_URL) { cloudLoad(); }
+  else { updateSyncBadge('idle'); }
+}
+
+function cloudLoad() {
+  if (!SCRIPT_URL) return;
+  updateSyncBadge('syncing');
+  fetch(SCRIPT_URL)
+    .then(r => r.json())
+    .then(d => {
+      if (d && typeof d === 'object' && !Array.isArray(d) && Object.keys(d).length > 0) {
+        data = Object.assign(JSON.parse(JSON.stringify(defaultData)), d);
+        localStorage.setItem(STORE_KEY, JSON.stringify(data));
+        render();
+      }
+      updateSyncBadge('ok');
+    })
+    .catch(() => updateSyncBadge('error'));
+}
+
+function cloudSave() {
+  if (!SCRIPT_URL) return;
+  updateSyncBadge('syncing');
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  }).then(() => updateSyncBadge('ok'))
+    .catch(() => updateSyncBadge('error'));
+}
+
+function updateSyncBadge(status) {
+  const el = document.getElementById('syncBadge');
+  if (!el) return;
+  const cfg = {
+    idle:    { icon:'☁️',  label:'Data Lokal',      color:'#aaa' },
+    syncing: { icon:'🔄',  label:'Menyinkron...',   color:'#F5A623' },
+    ok:      { icon:'✅',  label:'Tersinkron',       color:'#2E9D45' },
+    error:   { icon:'⚠️', label:'Gagal Sinkron',    color:'#c0392b' }
+  };
+  const c = cfg[status] || cfg.idle;
+  el.innerHTML = `${c.icon} <span>${c.label}</span>`;
+  el.style.color = c.color;
 }
 
 // ---------- HELPERS ----------
@@ -810,6 +864,12 @@ document.getElementById('tabBar').addEventListener('click', e => {
   currentTab = btn.dataset.tab;
   render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Auto cloud load on startup
+window.addEventListener('DOMContentLoaded', function() {
+  if (SCRIPT_URL) cloudLoad();
+  else updateSyncBadge('idle');
 });
 
 // ====================================================================
@@ -2118,7 +2178,35 @@ function renderPengaturan() {
   return `
     <div class="page-header">
       <h2>Manajemen <em>Data &amp; Master</em></h2>
-      <p>Kelola katalog produk, daftar pekerja, dan referensi aktivitas. Semua data tersimpan di perangkat ini (browser).</p>
+      <p>Kelola katalog produk, daftar pekerja, dan referensi aktivitas.</p>
+    </div>
+
+    <div class="card" style="border:2px solid #2E9D45;">
+      <div class="card-title">☁️ Sinkronisasi Google Sheets (Realtime)</div>
+      <div class="card-sub">Hubungkan ke Google Apps Script agar data tersinkron di semua perangkat secara otomatis.</div>
+      <div style="margin-top:14px;">
+        <label style="font-size:12px;font-weight:600;color:#444;display:block;margin-bottom:6px;">URL Google Apps Script Web App</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="scriptUrlInput" type="text"
+            value="${SCRIPT_URL || ''}"
+            placeholder="https://script.google.com/macros/s/..."
+            style="flex:1;min-width:200px;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;outline:none;">
+          <button onclick="setScriptUrl(document.getElementById('scriptUrlInput').value);toast('URL tersimpan! Menyinkron data...','success')"
+            style="padding:10px 18px;background:#2E9D45;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
+            Simpan & Sinkron
+          </button>
+        </div>
+        <div id="syncBadgeSettings" style="margin-top:10px;font-size:12px;color:#888;">
+          ${SCRIPT_URL ? '✅ URL sudah terhubung' : '⚠️ Belum ada URL — data masih tersimpan lokal saja'}
+        </div>
+        <div style="margin-top:12px;background:#f8f9fa;border-radius:10px;padding:14px;font-size:12px;color:#555;line-height:1.7;">
+          <strong>📋 Cara setup (sekali saja):</strong><br>
+          1. Buat Google Sheet baru → klik <strong>Extensions → Apps Script</strong><br>
+          2. Hapus kode lama, paste kode dari Admin → <strong>Deploy → New deployment</strong><br>
+          3. Pilih <em>Execute as: Me</em> · <em>Who has access: Anyone</em> → klik <strong>Deploy</strong><br>
+          4. Copy URL yang muncul → paste di kolom di atas → klik <strong>Simpan & Sinkron</strong>
+        </div>
+      </div>
     </div>
 
     <div class="card">
