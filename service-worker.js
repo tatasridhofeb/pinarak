@@ -1,19 +1,19 @@
 // ============================================================
-// PINARAK Service Worker v1.0
+// PINARAK Service Worker v2.0
 // Aplikasi Akuntansi BUMDES Bicak Makmur
-// Strategi: Cache-first untuk offline support
+// Strategi: Network-first agar selalu dapat versi terbaru
 // ============================================================
 
-const CACHE_NAME = 'pinarak-v1.0.0';
+const CACHE_NAME = 'pinarak-v2.0.0';
 const ASSETS = [
   './',
+  './index.html',
   './PINARAK.html',
-  './manifest.json',
-  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {
-  console.log('[PINARAK SW] Installing v1.0.0');
+  console.log('[PINARAK SW] Installing v2.0.0');
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(ASSETS).catch(err => {
@@ -25,10 +25,13 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  console.log('[PINARAK SW] Activated');
+  console.log('[PINARAK SW] Activated v2.0.0 - clearing old caches');
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      keys.filter(k => k !== CACHE_NAME).map(k => {
+        console.log('[PINARAK SW] Deleting old cache:', k);
+        return caches.delete(k);
+      })
     ))
   );
   return self.clients.claim();
@@ -38,19 +41,20 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.startsWith('chrome-extension://')) return;
 
+  // Network-first: selalu ambil dari server, fallback ke cache
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response;
-        }
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    fetch(event.request).then(response => {
+      if (!response || response.status !== 200 || response.type === 'error') {
         return response;
-      }).catch(() => {
+      }
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then(cached => {
+        if (cached) return cached;
         if (event.request.mode === 'navigate') {
-          return caches.match('./PINARAK.html');
+          return caches.match('./index.html');
         }
       });
     })
