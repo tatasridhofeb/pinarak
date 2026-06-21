@@ -788,31 +788,48 @@ function setScriptUrl(url) {
 function cloudLoad() {
   if (!SCRIPT_URL) return;
   updateSyncBadge('syncing');
-  fetch(SCRIPT_URL + '?action=read', { redirect: 'follow' })
-    .then(r => r.text())
+  fetch(SCRIPT_URL, { redirect: 'follow' })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
     .then(txt => {
       const d = JSON.parse(txt);
       if (d && typeof d === 'object' && !Array.isArray(d) && Object.keys(d).length > 0) {
         data = Object.assign(JSON.parse(JSON.stringify(defaultData)), d);
         localStorage.setItem(STORE_KEY, JSON.stringify(data));
         render();
+        toast('✅ Data berhasil dimuat dari cloud!', 'success');
       }
       updateSyncBadge('ok');
     })
-    .catch(() => updateSyncBadge('error'));
+    .catch(err => {
+      console.error('Cloud load error:', err);
+      updateSyncBadge('error');
+      toast('⚠️ Gagal memuat dari cloud: ' + err.message, 'error');
+    });
 }
 
 function cloudSave() {
   if (!SCRIPT_URL) return;
   updateSyncBadge('syncing');
-  const encoded = 'action=write&d=' + encodeURIComponent(JSON.stringify(data));
   fetch(SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: encoded
-  }).then(() => updateSyncBadge('ok'))
-    .catch(() => updateSyncBadge('error'));
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  }).then(() => {
+    updateSyncBadge('ok');
+  }).catch(err => {
+    console.error('Cloud save error:', err);
+    updateSyncBadge('error');
+  });
+}
+
+function testKoneksi() {
+  if (!SCRIPT_URL) { toast('URL belum diisi!', 'error'); return; }
+  toast('🔄 Sedang test koneksi...', 'info');
+  cloudLoad();
 }
 
 function updateSyncBadge(status) {
@@ -2196,6 +2213,10 @@ function renderPengaturan() {
           <button onclick="setScriptUrl(document.getElementById('scriptUrlInput').value);toast('URL tersimpan! Menyinkron data...','success')"
             style="padding:10px 18px;background:#2E9D45;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
             Simpan & Sinkron
+          </button>
+          <button onclick="testKoneksi()"
+            style="padding:10px 18px;background:#1F4D26;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
+            Test Koneksi
           </button>
         </div>
         <div id="syncBadgeSettings" style="margin-top:10px;font-size:12px;color:#888;">
