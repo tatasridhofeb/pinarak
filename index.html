@@ -788,9 +788,10 @@ function setScriptUrl(url) {
 function cloudLoad() {
   if (!SCRIPT_URL) return;
   updateSyncBadge('syncing');
-  fetch(SCRIPT_URL)
-    .then(r => r.json())
-    .then(d => {
+  fetch(SCRIPT_URL + '?action=read', { redirect: 'follow' })
+    .then(r => r.text())
+    .then(txt => {
+      const d = JSON.parse(txt);
       if (d && typeof d === 'object' && !Array.isArray(d) && Object.keys(d).length > 0) {
         data = Object.assign(JSON.parse(JSON.stringify(defaultData)), d);
         localStorage.setItem(STORE_KEY, JSON.stringify(data));
@@ -804,11 +805,12 @@ function cloudLoad() {
 function cloudSave() {
   if (!SCRIPT_URL) return;
   updateSyncBadge('syncing');
+  const encoded = 'action=write&d=' + encodeURIComponent(JSON.stringify(data));
   fetch(SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data)
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: encoded
   }).then(() => updateSyncBadge('ok'))
     .catch(() => updateSyncBadge('error'));
 }
