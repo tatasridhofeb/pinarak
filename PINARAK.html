@@ -705,7 +705,8 @@ function doLogin(){
 // ---------- DATA STORE ----------
 const STORE_KEY = 'pinarak_bumdes_bicak_v1';
 const SYNC_KEY  = 'pinarak_script_url_v1';
-let SCRIPT_URL  = localStorage.getItem(SYNC_KEY) || '';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdHvjrlXf9MeVp9JxbPhrUY0LxR_h0T3fcMu62uulVpVMeB6iDmGmxPV9Ykvi4C5ic/exec';
+let SCRIPT_URL  = localStorage.getItem(SYNC_KEY) || DEFAULT_SCRIPT_URL;
 
 const defaultData = {
   bahanBaku: [
