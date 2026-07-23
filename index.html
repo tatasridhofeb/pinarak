@@ -49,12 +49,14 @@
   }
 
   /* ============ HEADER ============ */
+  /* FIX: sebelumnya ada dua deklarasi `position` pada rule ini
+     (sticky lalu relative) sehingga header kehilangan sifat sticky
+     dan nav menggantung. Header kini tegas non-sticky. */
   header {
-    position: sticky; top: 0; z-index: 50;
+    position: relative; z-index: 50; overflow: hidden;
     background: linear-gradient(135deg, #FFCE39 0%, #FFD75C 40%, #FFCE39 100%);
     color: var(--ink); border-bottom: 4px solid var(--green);
     box-shadow: 0 2px 12px rgba(245,166,35,.25);
-    position: relative; overflow: hidden;
   }
   /* Subtle pineapple texture pattern */
   header::before {
@@ -133,8 +135,9 @@
   /* ============ NAV TABS ============ */
   nav.tabs {
     background: var(--paper); border-bottom: 1px solid var(--line);
-    position: sticky; top: 105px; z-index: 49;
-    box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--green);
+    position: sticky; top: 0; z-index: 49;
+    box-shadow: 0 2px 10px rgba(26,42,31,.10);
   }
   .tabs-inner {
     max-width: 1400px; margin: 0 auto; padding: 0 16px;
@@ -514,7 +517,7 @@
     main { padding: 20px 16px; }
     .page-header h2 { font-size: 24px; }
     .item-row { grid-template-columns: 1fr 1fr; }
-    nav.tabs { top: 64px; }
+    nav.tabs { top: 0; }
   }
 </style>
 </head>
